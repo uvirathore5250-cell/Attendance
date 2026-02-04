@@ -7,14 +7,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background: #f4f7f6; min-height: 100vh; display: flex; align-items: center; font-family: 'Segoe UI', sans-serif; }
-    .attendance-card { background: white; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: auto; padding: 25px; }
+    .attendance-card { background: white; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: auto; padding: 25px; }
     .form-label { font-weight: 700; color: #444; font-size: 0.85rem; margin-top: 10px; text-transform: uppercase; }
     .form-control, .form-select { border-radius: 8px; border: 1px solid #ced4da; padding: 10px; }
-    .btn-submit { background: #007bff; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.2s; }
-    .btn-submit:active { transform: scale(0.98); }
-    #status { margin-top: 15px; border-radius: 8px; display: none; padding: 12px; text-align: center; font-size: 0.9rem; }
-    .loader { display: none; margin: 10px auto; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .btn-submit { background: #007bff; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.2s; cursor: pointer; }
+    #status { margin-top: 15px; border-radius: 8px; display: none; padding: 12px; text-align: center; font-size: 0.9rem; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -45,66 +42,53 @@
       </div>
     </div>
 
-    <button onclick="submitEntry()" id="submitBtn" class="btn btn-submit">SUBMIT DATA</button>
-    
-    <div class="loader" id="loader"></div>
+    <button onclick="submitToGoogle()" id="submitBtn" class="btn btn-submit">SUBMIT DATA</button>
     <div id="status"></div>
   </div>
 </div>
 
 <script>
-  // Default: Aaj ki date set karein
+  // Default Date logic
   window.onload = function() {
     document.getElementById('entryDate').valueAsDate = new Date();
   };
 
-  function submitEntry() {
+  function submitToGoogle() {
     const btn = document.getElementById('submitBtn');
     const status = document.getElementById('status');
-    const loader = document.getElementById('loader');
-    
-    const data = {
-      date: document.getElementById('entryDate').value,
-      name: document.getElementById('staffName').value,
-      in: document.getElementById('inTime').value,
-      out: document.getElementById('outTime').value
-    };
+    const scriptURL = "https://script.google.com/macros/s/AKfycbz4lI2Jle5rOKRqDq1h2sb-xbjPIzHFMcFm_YepHcDLm440P7e6ptz42XTcIZM8q5Y/exec";
 
-    if(!data.in || !data.out || !data.date) {
-      alert("Please fill all boxes!");
-      return;
-    }
+    const name = document.getElementById('staffName').value;
+    const inT = document.getElementById('inTime').value;
+    const outT = document.getElementById('outTime').value;
+    const date = document.getElementById('entryDate').value;
 
-    // Processing State
+    if(!inT || !outT) { alert("In and Out time bhariye!"); return; }
+
     btn.disabled = true;
-    loader.style.display = 'block';
-    status.style.display = 'none';
+    btn.innerHTML = "Sending to Sheet...";
+    status.style.display = "block";
+    status.innerHTML = "Processing... Please wait";
+    status.style.background = "#eee";
 
-    google.script.run
-      .withSuccessHandler(function(response) {
+    // Direct API Fetch (Fast Mode)
+    const finalURL = `${scriptURL}?name=${encodeURIComponent(name)}&inTime=${encodeURIComponent(inT)}&outTime=${encodeURIComponent(outT)}&customDate=${encodeURIComponent(date)}`;
+
+    fetch(finalURL, { mode: 'no-cors' })
+      .then(() => {
+        status.innerHTML = "✅ Data Sent! Check Sheet in 2 seconds.";
+        status.style.background = "#d4edda";
+        status.style.color = "#155724";
         btn.disabled = false;
-        loader.style.display = 'none';
-        status.style.display = 'block';
-        status.innerHTML = response;
-        
-        if(response.includes('✅')) {
-          status.style.background = '#d4edda';
-          status.style.color = '#155724';
-          document.getElementById('inTime').value = '';
-          document.getElementById('outTime').value = '';
-        } else {
-          status.style.background = '#f8d7da';
-          status.style.color = '#721c24';
-        }
+        btn.innerHTML = "SUBMIT DATA";
+        document.getElementById('inTime').value = "";
+        document.getElementById('outTime').value = "";
       })
-      .withFailureHandler(function() {
+      .catch(err => {
+        status.innerHTML = "❌ Error: Connection Failed";
+        status.style.background = "#f8d7da";
         btn.disabled = false;
-        loader.style.display = 'none';
-        status.style.display = 'block';
-        status.innerHTML = "❌ Connection Failed!";
-        status.style.background = '#f8d7da';
-      })
-      .submitManualAttendance(data.name, data.in, data.out, data.date);
+      });
   }
 </script>
 
