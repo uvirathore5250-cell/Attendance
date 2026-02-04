@@ -3,94 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Attendance - Manual Entry</title>
+  <title>Manual Attendance System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; }
-    .card { border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: none; width: 100%; max-width: 400px; margin: auto; }
-    .btn-primary { background: #007bff; border: none; height: 50px; font-weight: 600; border-radius: 10px; }
-    .input-group-text { background: #fff; border-right: none; }
-    .form-control { border-left: none; }
-    #status { display: none; margin-top: 15px; font-weight: 500; }
+    body { background: #f4f7f9; min-height: 100vh; display: flex; align-items: center; font-family: 'Segoe UI', sans-serif; }
+    .attendance-card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 420px; margin: auto; padding: 25px; }
+    .form-label { font-weight: 600; color: #444; font-size: 0.9rem; margin-top: 10px; }
+    .form-control, .form-select { border-radius: 10px; padding: 10px; border: 1px solid #ddd; }
+    .btn-submit { background: #28a745; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.3s; }
+    .btn-submit:hover { background: #218838; }
+    .btn-submit:disabled { background: #6c757d; cursor: not-allowed; }
+    #statusMessage { margin-top: 15px; border-radius: 10px; display: none; padding: 10px; text-align: center; font-weight: 500; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="card p-4">
-    <h3 class="text-center mb-4" style="color: #333;">Staff Entry</h3>
+  <div class="attendance-card">
+    <h4 class="text-center mb-4">Baner Staff Entry</h4>
     
-    <div class="mb-3">
-      <label class="form-label text-muted small fw-bold">SELECT STAFF</label>
-      <select id="staffName" class="form-select form-select-lg">
-        <option value="Naeem sir">Naeem sir</option>
-        <option value="Pradeep sir">Pradeep sir</option>
-        <option value="Rohini mam">Rohini mam</option>
-        <option value="Yuvraj sir">Yuvraj sir</option>
-      </select>
+    <label class="form-label">SELECT DATE</label>
+    <input type="date" id="entryDate" class="form-control mb-2">
+
+    <label class="form-label">SELECT STAFF NAME</label>
+    <select id="staffName" class="form-select mb-2">
+      <option value="Naeem sir">Naeem sir</option>
+      <option value="Pradeep sir">Pradeep sir</option>
+      <option value="Rohini mam">Rohini mam</option>
+      <option value="Yuvraj sir">Yuvraj sir</option>
+    </select>
+
+    <div class="row">
+      <div class="col-6">
+        <label class="form-label">IN TIME</label>
+        <input type="text" id="inTime" class="form-control" placeholder="6.07 am">
+      </div>
+      <div class="col-6">
+        <label class="form-label">OUT TIME</label>
+        <input type="text" id="outTime" class="form-control" placeholder="7.08 pm">
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label class="form-label text-muted small fw-bold">IN TIME</label>
-      <input type="text" id="inTime" class="form-control" placeholder="e.g. 6.07 AM">
-    </div>
+    <button onclick="processEntry()" id="submitBtn" class="btn btn-submit">
+      SUBMIT ENTRY
+    </button>
 
-    <div class="mb-4">
-      <label class="form-label text-muted small fw-bold">OUT TIME</label>
-      <input type="text" id="outTime" class="form-control" placeholder="e.g. 7.09 PM">
-    </div>
-
-    <div class="d-grid">
-      <button onclick="submitData()" id="submitBtn" class="btn btn-primary">
-        SUBMIT TO SHEET
-      </button>
-    </div>
-
-    <div id="status" class="alert text-center"></div>
+    <div id="statusMessage"></div>
   </div>
 </div>
 
 <script>
-  function submitData() {
-    const btn = document.getElementById('submitBtn');
-    const status = document.getElementById('status');
-    const name = document.getElementById('staffName').value;
-    const inT = document.getElementById('inTime').value;
-    const outT = document.getElementById('outTime').value;
+  // Page load hote hi aaj ki date set karna
+  window.onload = function() {
+    document.getElementById('entryDate').valueAsDate = new Date();
+  };
 
-    if(!inT || !outT) {
-      alert("Please enter both In and Out times");
+  function processEntry() {
+    const btn = document.getElementById('submitBtn');
+    const status = document.getElementById('statusMessage');
+    const data = {
+      date: document.getElementById('entryDate').value,
+      name: document.getElementById('staffName').value,
+      in: document.getElementById('inTime').value,
+      out: document.getElementById('outTime').value
+    };
+
+    if(!data.in || !data.out || !data.date) {
+      alert("Please fill all details!");
       return;
     }
 
-    // UI Updates
+    // UI Feedback
     btn.disabled = true;
-    btn.innerHTML = 'Updating...';
-    status.style.display = 'none';
+    btn.innerHTML = 'Updating Sheet...';
+    status.style.display = 'block';
+    status.innerHTML = 'Connecting...';
+    status.style.background = '#fff3cd';
+    status.style.color = '#856404';
 
     google.script.run
       .withSuccessHandler(function(response) {
         btn.disabled = false;
-        btn.innerHTML = 'SUBMIT TO SHEET';
-        status.style.display = 'block';
+        btn.innerHTML = 'SUBMIT ENTRY';
         status.innerHTML = response;
         
         if(response.includes('✅')) {
-          status.className = 'alert alert-success mt-3';
+          status.style.background = '#d4edda';
+          status.style.color = '#155724';
+          // Clear inputs after success
           document.getElementById('inTime').value = '';
           document.getElementById('outTime').value = '';
         } else {
-          status.className = 'alert alert-warning mt-3';
+          status.style.background = '#f8d7da';
+          status.style.color = '#721c24';
         }
       })
       .withFailureHandler(function() {
         btn.disabled = false;
-        btn.innerHTML = 'SUBMIT TO SHEET';
-        status.style.display = 'block';
-        status.innerHTML = "❌ Connection Error!";
-        status.className = 'alert alert-danger mt-3';
+        btn.innerHTML = 'SUBMIT ENTRY';
+        status.innerHTML = "❌ Connection Failed!";
+        status.style.background = '#f8d7da';
       })
-      .submitManualAttendance(name, inT, outT);
+      .submitManualAttendance(data.name, data.in, data.out, data.date);
   }
 </script>
 
