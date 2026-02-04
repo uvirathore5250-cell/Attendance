@@ -7,7 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { background: #f4f7f6; min-height: 100vh; display: flex; align-items: center; font-family: 'Segoe UI', sans-serif; }
-    .attendance-card { background: white; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: auto; padding: 25px; }
+    .attendance-card { background: white; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin: auto; padding: 25px; }
     .form-label { font-weight: 700; color: #444; font-size: 0.85rem; margin-top: 10px; text-transform: uppercase; }
     .form-control, .form-select { border-radius: 8px; border: 1px solid #ced4da; padding: 10px; }
     .btn-submit { background: #007bff; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.2s; cursor: pointer; }
@@ -18,7 +18,7 @@
 
 <div class="container">
   <div class="attendance-card">
-    <h4 class="text-center mb-4" style="font-weight: 800; color: #333;">Staff Entry</h4>
+    <h4 class="text-center mb-4" style="font-weight: 800; color: #333;">Baner Staff Entry</h4>
     
     <label class="form-label">Select Date</label>
     <input type="date" id="entryDate" class="form-control">
@@ -48,7 +48,6 @@
 </div>
 
 <script>
-  // Default Date logic
   window.onload = function() {
     document.getElementById('entryDate').valueAsDate = new Date();
   };
@@ -56,24 +55,25 @@
   function submitToGoogle() {
     const btn = document.getElementById('submitBtn');
     const status = document.getElementById('status');
-    const scriptURL = "https://script.google.com/macros/s/AKfycbz4lI2Jle5rOKRqDq1h2sb-xbjPIzHFMcFm_YepHcDLm440P7e6ptz42XTcIZM8q5Y/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxhGQKiWaY036C2nevBl4ZHa4xo-hcijl0YrA5Mu2G7hCxU4RAFooyR9G6iPMwZVRf94g/exec";
 
     const name = document.getElementById('staffName').value;
     const inT = document.getElementById('inTime').value;
     const outT = document.getElementById('outTime').value;
     const date = document.getElementById('entryDate').value;
 
-    if(!inT || !outT) { alert("In and Out time bhariye!"); return; }
+    if(!inT || !outT || !date) { alert("Sari jankari bhariye!"); return; }
 
     btn.disabled = true;
-    btn.innerHTML = "Sending to Sheet...";
+    btn.innerHTML = "Processing...";
     status.style.display = "block";
-    status.innerHTML = "Processing... Please wait";
-    status.style.background = "#eee";
+    status.innerHTML = "Sending Data... Please wait";
+    status.style.background = "#f8f9fa";
+    status.style.color = "#333";
 
-    // Direct API Fetch (Fast Mode)
     const finalURL = `${scriptURL}?name=${encodeURIComponent(name)}&inTime=${encodeURIComponent(inT)}&outTime=${encodeURIComponent(outT)}&customDate=${encodeURIComponent(date)}`;
 
+    // GitHub compatibility mode
     fetch(finalURL, { mode: 'no-cors' })
       .then(() => {
         status.innerHTML = "✅ Data Sent! Check Sheet in 2 seconds.";
@@ -85,9 +85,11 @@
         document.getElementById('outTime').value = "";
       })
       .catch(err => {
-        status.innerHTML = "❌ Error: Connection Failed";
+        status.innerHTML = "❌ Connection Error!";
         status.style.background = "#f8d7da";
+        status.style.color = "#721c24";
         btn.disabled = false;
+        btn.innerHTML = "SUBMIT DATA";
       });
   }
 </script>
